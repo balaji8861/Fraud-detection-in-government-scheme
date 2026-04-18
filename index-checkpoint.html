@@ -1,0 +1,207 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Fraud Detection</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+
+    <style>
+        body {
+            font-family: 'Segoe UI', sans-serif;
+            background: #0f172a;
+            color: #e2e8f0;
+            display: flex;
+            justify-content: center;
+            padding: 30px;
+        }
+
+        .container {
+            background: #1e293b;
+            padding: 25px;
+            border-radius: 16px;
+            width: 100%;
+            max-width: 500px;
+            box-shadow: 0 10px 30px rgba(0,0,0,0.4);
+        }
+
+        h2 {
+            text-align: center;
+            margin-bottom: 20px;
+            color: #38bdf8;
+        }
+
+        label {
+            font-size: 14px;
+            color: #94a3b8;
+        }
+
+        input, select {
+            width: 100%;
+            padding: 10px;
+            margin: 6px 0 14px;
+            border-radius: 8px;
+            border: none;
+            background: #334155;
+            color: white;
+        }
+
+        input:focus, select:focus {
+            outline: 2px solid #38bdf8;
+        }
+
+        button {
+            width: 100%;
+            padding: 12px;
+            background: linear-gradient(135deg, #3b82f6, #06b6d4);
+            border: none;
+            border-radius: 10px;
+            color: white;
+            font-size: 16px;
+            cursor: pointer;
+            transition: 0.3s;
+        }
+
+        button:hover {
+            transform: scale(1.03);
+            box-shadow: 0 0 10px #38bdf8;
+        }
+
+        #result {
+            margin-top: 20px;
+            padding: 18px;
+            border-radius: 12px;
+            text-align: center;
+            display: none;
+        }
+
+        .fraud {
+            background: rgba(244, 67, 54, 0.15);
+            border: 2px solid #f44336;
+        }
+
+        .legit {
+            background: rgba(76, 175, 80, 0.15);
+            border: 2px solid #4caf50;
+        }
+
+        .score {
+            font-size: 14px;
+            margin-top: 5px;
+        }
+
+        .shap-box {
+            margin-top: 15px;
+            padding: 10px;
+            border-radius: 10px;
+            background: #020617;
+            text-align: left;
+        }
+
+        .shap-box h3 {
+            margin-bottom: 8px;
+            color: #facc15;
+        }
+
+        .shap-item {
+            font-size: 13px;
+            padding: 3px 0;
+        }
+    </style>
+</head>
+
+<body>
+<div class="container">
+
+    <h2>🛡️ Fraud Detection System</h2>
+
+    <label>Transaction Step</label>
+    <input type="number" id="step" placeholder="e.g. 1">
+
+    <label>Amount</label>
+    <input type="number" id="amount" placeholder="e.g. 5000">
+
+    <label>Transaction Type</label>
+    <select id="txn_type">
+        <option value="CASH_IN">CASH IN</option>
+        <option value="CASH_OUT">CASH OUT</option>
+        <option value="DEBIT">DEBIT</option>
+        <option value="PAYMENT">PAYMENT</option>
+        <option value="TRANSFER">TRANSFER</option>
+    </select>
+
+    <label>Sender Balance (Before)</label>
+    <input type="number" id="oldbalanceOrg">
+
+    <label>Sender Balance (After)</label>
+    <input type="number" id="newbalanceOrig">
+
+    <label>Receiver Balance (Before)</label>
+    <input type="number" id="oldbalanceDest">
+
+    <label>Receiver Balance (After)</label>
+    <input type="number" id="newbalanceDest">
+
+    <button onclick="predict()">🚀 Check Transaction</button>
+
+    <div id="result"></div>
+
+</div>
+
+<script>
+async function predict() {
+
+    const btn = document.querySelector("button");
+    btn.innerText = "Checking...";
+    btn.disabled = true;
+
+    const form = new FormData();
+    form.append('step',           document.getElementById('step').value);
+    form.append('amount',         document.getElementById('amount').value);
+    form.append('txn_type',       document.getElementById('txn_type').value);
+    form.append('oldbalanceOrg',  document.getElementById('oldbalanceOrg').value);
+    form.append('newbalanceOrig', document.getElementById('newbalanceOrig').value);
+    form.append('oldbalanceDest', document.getElementById('oldbalanceDest').value);
+    form.append('newbalanceDest', document.getElementById('newbalanceDest').value);
+
+    try {
+        const res  = await fetch('/predict', { method: 'POST', body: form });
+        const data = await res.json();
+
+        const div = document.getElementById('result');
+        div.style.display = 'block';
+
+        const isFraud = data.prediction === 'FRAUD';
+
+        div.className = isFraud ? 'fraud' : 'legit';
+
+        // SHAP Features HTML
+        let shapHTML = "";
+        if (data.top_features) {
+            shapHTML = `
+                <div class="shap-box">
+                    <h3>🧠 Why this prediction?</h3>
+                    ${data.top_features.map(f =>
+                        `<div class="shap-item">• ${f.feature}: ${f.impact.toFixed(4)}</div>`
+                    ).join("")}
+                </div>
+            `;
+        }
+
+        div.innerHTML = `
+            <h2>${isFraud ? '🚨 Fraud Detected' : '✅ Legitimate Transaction'}</h2>
+            <div class="score">XGBoost Score: ${data.xgb_score}</div>
+            <div class="score">Isolation Forest: ${data.iso_score}</div>
+            <div class="score"><strong>Ensemble Score: ${data.ensemble_score}</strong></div>
+            ${shapHTML}
+        `;
+
+    } catch (err) {
+        alert("❌ Error connecting to server");
+    }
+
+    btn.innerText = "🚀 Check Transaction";
+    btn.disabled = false;
+}
+</script>
+
+</body>
+</html>

@@ -1,0 +1,45 @@
+{
+    "project": "FusionX Dizzy Hackers Mega Hackathon 2026",
+    "track": "AI/ML & Data Science",
+    "title": "Fraud Detection \u2014 Ensemble of XGBoost + GNN + Isolation Forest",
+    "models": {
+        "XGBoost": {
+            "weight": 0.5,
+            "roc_auc": 0.6576
+        },
+        "GNN": {
+            "weight": 0.3,
+            "roc_auc": 0.5712
+        },
+        "Isolation Forest": {
+            "weight": 0.2,
+            "roc_auc": 0.4722
+        }
+    },
+    "ensemble_metrics": {
+        "roc_auc": 0.4725,
+        "avg_precision": 0.0007,
+        "precision": 0.0,
+        "recall": 0.0,
+        "f1_score": 0.0,
+        "fraud_detected": 0,
+        "total_samples": 68366
+    },
+    "explainability": "SHAP TreeExplainer \u2014 feature-level explanations for every prediction",
+    "files_submitted": [
+        "xgb_model.pkl",
+        "iso_model.pkl",
+        "gnn_best.pt",
+        "ensemble_results.csv",
+        "shap_values.csv",
+        "model_comparison.csv",
+        "model_comparison.png",
+        "roc_curve.png",
+        "confusion_matrix.png",
+        "score_distribution.png",
+        "shap_summary_bar.png",
+        "shap_beeswarm.png",
+        "shap_waterfall_fraud.png",
+        "top10_features.png"
+    ]
+}
